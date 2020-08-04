@@ -141,6 +141,10 @@
   <ItemGroup>
     <ClCompile Include="Graph.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="test.h" />
+    <ClInclude Include="AdjacencyMultiList.h" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

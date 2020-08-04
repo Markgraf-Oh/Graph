@@ -2,9 +2,12 @@
 //
 
 #include <iostream>
+#include "AdjacencyMultiList.h"
 
 int main()
 {
+    int a = int();
+    std::cout << a << std::endl;
     std::cout << "Hello World!\n";
 }
 
