@@ -6,7 +6,8 @@
 
 int main()
 {
-    int a = int();
+    int a = 1;
+    a = !a;
     std::cout << a << std::endl;
     std::cout << "Hello World!\n";
 }
