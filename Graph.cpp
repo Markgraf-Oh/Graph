@@ -6,10 +6,12 @@
 
 int main()
 {
+    namespace aml = AdjacencyMultiList;
     int a = 1;
     a = !a;
     std::cout << a << std::endl;
     std::cout << "Hello World!\n";
+    aml::Edge<bool, int> b;
 }
 
 // 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴
