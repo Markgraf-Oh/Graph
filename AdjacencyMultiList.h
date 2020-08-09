@@ -4,6 +4,7 @@
 #include <stack>
 #include <array>
 #include <string>
+#include <list>
 
 #define LINE_INFO (std::string(__FUNCTION__) + " in " + std::string(__FILE__) +"(line : " + std::to_string(__LINE__)+ ")")
 
@@ -18,16 +19,7 @@ namespace AdjacencyMultiList
 	template<typename VT = int, typename ET = float>
 	class Edge;
 
-	template<typename VT = int, typename ET = float>
-	struct Link
-	{
-		Vertex<VT, ET>* vertex = nullptr;
-		Edge<VT, ET>* next = nullptr;
-
-		Link(){};
-		Link(Vertex<VT, ET>* init_vertex) : vertex(init_vertex) {};
-	};
-
+	
 	class GraphException : virtual public std::exception
 	{
 	protected:
@@ -109,7 +101,7 @@ namespace AdjacencyMultiList
 	public:
 		Edge()
 		{
-			
+			data = ET();
 		};
 
 		/**@param	init_data	initial data of this edge
@@ -117,7 +109,7 @@ namespace AdjacencyMultiList
 		Edge(ET init_data) : data(init_data){};
 
 		Edge(Vertex<VT, ET>* vertex0, Vertex<VT, ET>* vertex1) :
-			links({Link<VT, ET>(vertex0), Link<VT, ET>(vertex1)})
+			vertex{{vertex0, vertex1}}
 		{
 			if(typeid(ET) == typeid(float))
 			{
@@ -127,7 +119,7 @@ namespace AdjacencyMultiList
 		};
 
 		Edge(Vertex<VT, ET>* vertex0, Vertex<VT, ET>* vertex1, ET init_data) :
-			links({Link<VT, ET>(vertex0), Link<VT, ET>(vertex1)}),
+			vertex{{vertex0, vertex1}},
 			data(init_data){};
 
 		//변수
@@ -137,12 +129,20 @@ namespace AdjacencyMultiList
 		bool mark = false;
 
 	protected:
-		std::array<Link<VT, ET>, 2> links;
+		std::array<Vertex<VT, ET>*, 2> vertex{{nullptr, nullptr}};
+		std::array<Edge<VT, ET>*, 2> next{{nullptr, nullptr}};
+		std::array<Edge<VT, ET>*, 2> before{{nullptr, nullptr}};
 
 		//함수
 	public:
-		Edge<VT, ET>* Next(Vertex<VT, ET>* target_vertex);
+		Edge<VT, ET>* GetNext(Vertex<VT, ET>* target_vertex);
 
+		Edge<VT, ET>* GetBefore(Vertex<VT, ET>* target_vertex);
+
+		/**	주어진 vertex의 array 상에서의 index를 찾습니다.
+		*@return	해당 vertex를 찾으면 0 or 1
+		*			못찾으면 -1
+		*/
 		int FindIndex(Vertex<VT, ET>* target_vertex);
 
 	protected:
@@ -173,20 +173,27 @@ namespace AdjacencyMultiList
 	public:
 		//return number of vertices in this graph
 		int GetTargetVertexNumber(){ return target_vertex_number; }; //vertex의 복수형이 vertices라니 진짜 영어의 규칙성은...
+
+		int GetEdgeNumber(){ return current_edge_number; };
 		//
 		void Initialize(int init_vertex_number);
 
-		static bool IsConnected(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
+		bool IsConnected(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
+
+		bool IsConnected(int i, int j);
 
 		std::vector<Edge<VT, ET>*> FindConnections(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
-		//
-		static void Connect(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
-		//
-		static void Disconnect(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
-
-		static void PopEdge(Edge<VT, ET>* target_edge);
 		
-		Vertex<VT, ET>* PopVertex(Vertex<VT, ET>* target);
+		//
+		void Connect(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
+
+		void Connect(int i, int j);
+		//
+		void Disconnect(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
+
+		void PopEdge(Edge<VT, ET>* target_edge);
+		
+		void PopVertex(Vertex<VT, ET>* target);
 		
 		void ClearVertex();
 		//
@@ -223,7 +230,7 @@ namespace AdjacencyMultiList
 		while(current != nullptr)
 		{
 			++degree;
-			current = current->Next(this);
+			current = current->GetNext(this);
 		}
 		return degree;
 	}
@@ -244,9 +251,9 @@ namespace AdjacencyMultiList
 	{
 		if(front == nullptr) return nullptr;
 		Edge<VT, ET>* back = front;
-		while(back->Next(this) != nullptr)
+		while(back->GetNext(this) != nullptr)
 		{
-			back = back->Next(this);
+			back = back->GetNext(this);
 		}
 		return back;
 	}
@@ -259,10 +266,10 @@ namespace AdjacencyMultiList
 		while(current != nullptr)
 		{
 			int selector = current->FindIndex(this);
-			current->mark = (current->links[!selector].vertex == nullptr) ? true : false;
-			current->links[selector].vertex == nullptr;
+			current->mark = (current->vertex[!selector] == nullptr) ? true : false;
+			current->vertex[selector] == nullptr;
 			edge_stack.push(current);
-			current = std::exchange(current->links[selector].next, nullptr);
+			current = std::exchange(current->next[selector], nullptr);
 		}
 
 		while(!edge_stack.empty())
@@ -281,32 +288,49 @@ namespace AdjacencyMultiList
 
 
 	template<typename VT, typename ET>
-	inline Edge<VT, ET>* Edge<VT, ET>::Next(Vertex<VT, ET>* target_vertex)
+	inline Edge<VT, ET>* Edge<VT, ET>::GetNext(Vertex<VT, ET>* target_vertex)
 	{
 		if(target_vertex == nullptr) return nullptr;
 
-		Edge<VT, ET>* next = nullptr;
-		if(links[0].vertex == target_vertex)
+		Edge<VT, ET>* findnext = nullptr;
+		if(vertex[0] == target_vertex)
 		{
-			next = links[0].next;
+			findnext = next[0];
 		}
-		else if(links[1].vertex == target_vertex)
+		else if(vertex[1] == target_vertex)
 		{
-			next = links[1].next;
+			findnext = next[1];
 		}
 
-		return next;
+		return findnext;
+	}
+
+	template<typename VT, typename ET>
+	inline Edge<VT, ET>* Edge<VT, ET>::GetBefore(Vertex<VT, ET>* target_vertex)
+	{
+		if(target_vertex == nullptr) return nullptr;
+
+		Edge<VT, ET>* findnext = nullptr;
+		if(vertex[0] == target_vertex)
+		{
+			findnext = before[0];
+		}
+		else if(vertex[1] == target_vertex)
+		{
+			findnext = before[1];
+		}
+		return findnext;
 	}
 
 	template<typename VT, typename ET>
 	inline int Edge<VT, ET>::FindIndex(Vertex<VT, ET>* target_vertex)
 	{
 		int selector;
-		if(links[0].vertex == target_vertex)
+		if(vertex[0] == target_vertex)
 		{
 			selector = 0;
 		}
-		else if(links[1].vertex == target_vertex)
+		else if(vertex[1] == target_vertex)
 		{
 			selector = 1;
 		}
@@ -318,16 +342,19 @@ namespace AdjacencyMultiList
 	template<typename VT, typename ET>
 	inline void Edge<VT, ET>::append(Vertex<VT, ET>* target, Edge<VT, ET>* next_edge)
 	{
-		if(target == nullptr || next_edge == nullptr) return;
+		if(target == nullptr) throw std::invalid_argument("target = nullptr");
+		if(next_edge == nullptr) throw std::invalid_argument("next_edge = nullptr");
+		int next_selector = next_edge->FindIndex(target);
+		if(next_selector < 0) throw std::invalid_argument("edge and vertex is not related");
 
-		if(links[0].vertex == target)
+		int selector = FindIndex(target);
+		if(selector < 0) throw GraphException(LINE_INFO, "can't find vertex");
+		
+		if(this->next[selector] != nullptr)
 		{
-			links[0].next = next_edge;
+			next_edge->next[next_selector] = this->next[selector];
 		}
-		else if(links[1].vertex == target)
-		{
-			links[1].next = next_edge;
-		}
+		this->next[selector] = next_edge;
 	}
 
 	template<typename VT, typename ET>
@@ -361,40 +388,44 @@ namespace AdjacencyMultiList
 	}
 
 	template<typename VT, typename ET>
-	inline bool Graph<VT, ET>::IsConnected(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2)
+	inline bool Graph<VT, ET>::IsConnected(Vertex<VT, ET>* vertex0, Vertex<VT, ET>* vertex1)
 	{
-		bool found = false;
-		Edge<VT, ET>* edge_list = vertex1.front;
+		Edge<VT, ET>* edge_list = vertex0.front;
 		while(edge_list != nullptr)
 		{
-			if(edge_list->links[0].vertex == vertex1 && edge_list->links[1].vertex == vertex2)
-				found = true;
-			else if(edge_list->links[0].vertex == vertex2 && edge_list->links[1].vertex == vertex1)
-				found = true;
-
-			if(found)
+			if(edge_list->vertex[0] == vertex0 && edge_list->vertex[1] == vertex1)
+				return true;
+			else if(edge_list->vertex[0] == vertex1 && edge_list->vertex[1] == vertex0)
 				return true;
 
-			edge_list = edge_list->Next(vertex1);
+			edge_list = edge_list->GetNext(vertex0);
 		}
 
 		return false;
 	}
 
 	template<typename VT, typename ET>
+	inline bool Graph<VT, ET>::IsConnected(int i, int j)
+	{
+		if(i >= vertex_list.size() || j >= vertex_list.size() | i==j)
+			return false;
+
+		return this->IsConnected(vertex_list[i], vertex_list[j]);
+	}
+
+	template<typename VT, typename ET>
 	inline std::vector<Edge<VT, ET>*> Graph<VT, ET>::FindConnections(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2)
 	{
 		std::vector<Edge<VT, ET>*> founds;
-
 		Edge<VT, ET>* current_edge = vertex1.front;
 		while(current_edge != nullptr)
 		{
-			if(current_edge->links[0].vertex == vertex1 && current_edge->links[1].vertex == vertex2)
+			if(current_edge->vertex[0] == vertex1 && current_edge->vertex[1] == vertex2)
 				founds.push_back(current_edge);
-			else if(current_edge->links[0].vertex == vertex2 && current_edge->links[1].vertex == vertex1)
+			else if(current_edge->vertex[0] == vertex2 && current_edge->vertex[1] == vertex1)
 				founds.push_back(current_edge);
 
-			current_edge = current_edge->Next(vertex1);
+			current_edge = current_edge->GetNext(vertex1);
 		}
 
 		return founds;
@@ -403,8 +434,11 @@ namespace AdjacencyMultiList
 	template<typename VT, typename ET>
 	inline void Graph<VT, ET>::Connect(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2)
 	{
+		if(vertex1 == nullptr || vertex2 == nullptr) throw std::invalid_argument("vertex");
+
 		Edge<VT, ET>* back1 = vertex1->GetBack();
 		Edge<VT, ET>* back2 = vertex2->GetBack();
+		
 		Edge<VT, ET>* connector = new Edge<VT, ET>(vertex1, vertex2);
 		if(nullptr == back1)
 		{
@@ -412,8 +446,7 @@ namespace AdjacencyMultiList
 		}
 		else
 		{
-			back1->links[(back1->links[0].vertex == vertex1 ? 0 : 1)]
-				= connector;
+			back1->append(vertex1, connector);
 		}
 
 		if(nullptr == back2)
@@ -422,66 +455,84 @@ namespace AdjacencyMultiList
 		}
 		else
 		{
-			back2->links[(back1->links[0].vertex == vertex2 ? 0 : 1)]
-				= connector;
+			back2->append(vertex2, connector);
 		}
+
 		++current_edge_number;
+	}
+
+	template<typename VT, typename ET>
+	inline void Graph<VT, ET>::Connect(int i, int j)
+	{
+		if(i >= vertex_list.size() || j >= vertex_list.size())
+			throw GraphException(LINE_INFO, "given index is out of range");
+
+		if(i == j)
+			throw GraphException(LINE_INFO, "same index");
+
+
+		this->Connect(vertex_list[i], vertex_list[j]);
 	}
 
 	template<typename VT, typename ET>
 	inline void Graph<VT, ET>::Disconnect(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2)
 	{
+		std::vector<Edge<VT,ET>*> connections = FindConnections(vertex1, vertex2);
+		for(Edge<VT, ET>* connection : connections)
+		{
+			PopEdge(connection);
+		}
 	}
 
 	template<typename VT, typename ET>
 	inline void Graph<VT, ET>::PopEdge(Edge<VT, ET>* target_edge)
 	{
-		std::vector< Edge<VT, ET>*> befores;
-		for(Link<VT, ET> link : target_edge->links)
-		{
-			if(std::find(vertex_list.front(), vertex_list.end(), link.vertex) == vertex_list.end())
-				throw GraphException(LINE_INFO, "given Edge is not belong to this graph");
-
-			befores.push_back(link.vertex->front);
-		}
-				
-		if(befores[0] == nullptr || befores[1] == nullptr)
-			throw GraphException(LINE_INFO, "The vertex doesn't have any edges");
+		if(target_edge == nullptr) throw std::invalid_argument("target_edge is null");
 
 		for(int i = 0; i < 2; i++)
 		{
-			Edge<VT, ET>* &before = befores[i];
-			Vertex<VT, ET>* target_vertex = target_edge->links[i].vertex;
-			if(before == target_edge) before == nullptr;
-
-			while(before != nullptr)
+			Vertex<VT, ET>* target_vertex = target_edge->vertex[i];
+			Edge<VT, ET>* before_edge = target_edge->before[i];
+			Edge<VT, ET>* next_edge = target_edge->next[i];
+			if(before_edge == nullptr)
 			{
-				Edge<VT, ET>* next = before->Next(target_vertex);
-				if(next == target_edge) break;
-				if(next == nullptr) throw GraphException(LINE_INFO, "Fail to find Edge");
-				before = next;
-			}
-			
-			if(before == nullptr)
-			{
-				target_vertex->front = target_edge->Next(target_vertex);
+				target_vertex->front = target_edge->GetNext(target_vertex);
 			}
 			else
 			{
-				int selector = before->FindIndex(target_vertex);
-				before->links[selector].next = target_edge->Next(target_vertex);
+				int selector = before_edge->FindIndex(target_vertex);
+				before_edge->next[selector] = next_edge;
+			}
+
+			if(next_edge != nullptr)
+			{
+				int selector = next_edge->FindIndex(target_vertex);
+				next_edge->before[selector] = before_edge;
 			}
 		}
+
 		delete target_edge;
 		target_edge = nullptr;
 		--current_edge_number;
 	}
 
 	template<typename VT, typename ET>
-	inline Vertex<VT, ET>* Graph<VT, ET>::PopVertex(Vertex<VT, ET>* target)
+	inline void Graph<VT, ET>::PopVertex(Vertex<VT, ET>* target)
 	{
-		return NULL;
+		typename std::vector<Vertex<VT, ET>*>::iterator iter = std::find(vertex_list.front(), vertex_list.end(), target);
+		if(iter == vertex_list.end())
+			throw std::invalid_argument("target vertex is not included in this graph");
+
+		while(target->front != nullptr)
+		{
+			PopEdge(target->front);
+		}
+		delete target;
+		target = nullptr;
+		*iter = nullptr;
+		vertex_list.erase(iter);
 	}
+
 
 	template<typename VT, typename ET>
 	inline void Graph<VT, ET>::ClearVertex()
@@ -504,7 +555,6 @@ namespace AdjacencyMultiList
 		}
 		current_edge_number = 0;
 	}
-
 
 }
 

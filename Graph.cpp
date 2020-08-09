@@ -2,16 +2,57 @@
 //
 
 #include <iostream>
+#include <random>
 #include "AdjacencyMultiList.h"
+
+int GetRandomIndex(std::minstd_rand& generator, int size)
+{
+    std::uniform_int_distribution<int> dist_uniform_int(0, size-1);
+
+    return dist_uniform_int(generator);
+}
 
 int main()
 {
     namespace aml = AdjacencyMultiList;
-    int a = 1;
-    a = !a;
-    std::cout << a << std::endl;
-    std::cout << "Hello World!\n";
-    aml::Edge<bool, int> b;
+
+    int node_number = 10000;
+    int mean_degree = 4;
+    float connect_ratio = (float)mean_degree / (float)node_number;
+
+    aml::Graph<int, float> test_graph(node_number);
+
+    test_graph.Initialize(node_number);
+
+    std::vector<int> histogram(node_number, 0);
+
+    std::minstd_rand generator_basic(42);
+
+    std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
+
+    //Creating ER Network
+    for(int i = 1; i < node_number; i++)
+    {
+        for(int j = 0; j < i; j++)
+        {
+            if(uniform_dist(generator_basic) < connect_ratio)
+            {
+                test_graph.Connect(i, j);
+            }
+        }
+    }
+
+    std::cout << test_graph.GetEdgeNumber() << std::endl;
+
+    for(int i = 0; i < node_number; i++)
+    {
+        histogram[test_graph.vertex_list[i]->GetDegree()] += 1;
+    }
+
+    for(int i = 0; i < 100; i++)
+    {
+        std::cout << histogram[i] << " ";
+    }
 }
 
 // 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴
