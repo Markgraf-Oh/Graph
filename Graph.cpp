@@ -12,6 +12,27 @@ int GetRandomIndex(std::minstd_rand& generator, int size)
     return dist_uniform_int(generator);
 }
 
+void ShowDegreeDistribution(AdjacencyMultiList::Graph<int, float>& target_graph)
+{
+    std::cout << "number of vertices : " << target_graph.vertex_list.size() << std::endl;
+    std::cout << "number of edges : " << target_graph.GetEdgeNumber() << std::endl;
+
+    int node_number = target_graph.vertex_list.size();
+
+    std::vector<int> histogram(node_number, 0);
+
+    for(int i = 0; i < node_number; i++)
+    {
+        histogram[target_graph.vertex_list[i]->GetDegree()] += 1;
+    }
+
+    for(int i = 0; i < 20; i++)
+    {
+        std::cout << histogram[i] << "\t";
+        std::cout << std::string(histogram[i] / 50, '*') << std::endl;
+    }
+}
+
 int main()
 {
     namespace aml = AdjacencyMultiList;
@@ -42,17 +63,46 @@ int main()
         }
     }
 
-    std::cout << test_graph.GetEdgeNumber() << std::endl;
+    ShowDegreeDistribution(test_graph);
 
-    for(int i = 0; i < node_number; i++)
+    std::cout << "\n\n" << std::string(30, '*') << "\n";
+
+    std::cout << "remove half of the vertices" << std::endl;
+
+    int i = 0;
+    while(i < test_graph.vertex_list.size())
     {
-        histogram[test_graph.vertex_list[i]->GetDegree()] += 1;
+        if(uniform_dist(generator_basic) < 0.5)
+        {
+            test_graph.PopVertex(test_graph.vertex_list[i]);
+        }
+        else i++;
+    }
+    ShowDegreeDistribution(test_graph);
+    
+    std::cout << "\n\n" << std::string(30, '*') << "\n";
+
+    std::cout << "remove half of the edges" << std::endl;
+
+    for(aml::Vertex<>* vertex : test_graph.vertex_list)
+    {
+        aml::Edge<>* current_edge =  vertex->GetFront();
+        while(current_edge != nullptr)
+        {
+            if(!current_edge->mark)
+            {
+                current_edge->mark = true;
+                if(uniform_dist(generator_basic) < 0.5)
+                {
+                    current_edge = test_graph.PopEdge(current_edge, vertex);
+                    continue;
+                }
+            }
+            current_edge = current_edge->GetNext(vertex);
+        }
     }
 
-    for(int i = 0; i < 100; i++)
-    {
-        std::cout << histogram[i] << " ";
-    }
+    ShowDegreeDistribution(test_graph);
 }
 
 // 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴
