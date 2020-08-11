@@ -178,6 +178,8 @@ namespace AdjacencyMultiList
 		//
 		void Initialize(int init_vertex_number);
 
+		void Initialize();
+
 		bool IsConnected(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
 
 		bool IsConnected(int i, int j);
@@ -384,6 +386,16 @@ namespace AdjacencyMultiList
 		ClearVertex();
 		target_vertex_number = init_vertex_number;
 		vertex_list.reserve(init_vertex_number);
+		for(int i = 0; i < target_vertex_number; i++)
+		{
+			vertex_list.push_back(new Vertex<VT, ET>());
+		}
+	}
+
+	template<typename VT, typename ET>
+	inline void Graph<VT, ET>::Initialize()
+	{
+		ClearVertex();
 		for(int i = 0; i < target_vertex_number; i++)
 		{
 			vertex_list.push_back(new Vertex<VT, ET>());

@@ -26,7 +26,8 @@ void ShowDegreeDistribution(AdjacencyMultiList::Graph<int, float>& target_graph)
         histogram[target_graph.vertex_list[i]->GetDegree()] += 1;
     }
 
-    for(int i = 0; i < 20; i++)
+    if(histogram.size())
+    for(int i = 0; (i < histogram.size() && i < 20); i++)
     {
         std::cout << histogram[i] << "\t";
         std::cout << std::string(histogram[i] / 50, '*') << std::endl;
@@ -103,6 +104,25 @@ int main()
     }
 
     ShowDegreeDistribution(test_graph);
+
+    std::cout << "\n\n" << std::string(30, '*') << "\n";
+
+    std::cout << "clear edges" << std::endl;
+
+    test_graph.ClearEdge();
+
+    ShowDegreeDistribution(test_graph);
+
+    std::cout << "\n\n" << std::string(30, '*') << "\n";
+
+    std::cout << "clear vertex" << std::endl;
+
+    test_graph.ClearVertex();
+
+    ShowDegreeDistribution(test_graph);
+
+    char a;
+    std::cin >> a;
 }
 
 // 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴
