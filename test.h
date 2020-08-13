@@ -1,52 +1,72 @@
 #pragma once
 
-#include <iostream>
+#include <random>
+#include "AdjacencyMultiList.h"
+#include "Network.h"
 
-template<typename VertexType, typename EdgeType>
-class Edge;
-
-
-template<typename VertexType, typename EdgeType>
-class Vertex
+int GetRandomIndex(std::minstd_rand& generator, int size)
 {
-public:
-	VertexType verval;
+    std::uniform_int_distribution<int> dist_uniform_int(0, size - 1);
 
-	Edge<VertexType, EdgeType>* test;
-
-	Vertex(VertexType v, EdgeType e);
-
-	virtual ~Vertex();
-};
-
-template<typename VertexType, typename EdgeType>
-class Edge
-{
-public:
-	EdgeType myval;
-
-	Edge(EdgeType e)
-	{
-		myval = e;
-	};
-
-	void print()
-	{
-		std::cout << "test" << std::endl;
-		std::cout << myval << std::endl;
-	};
-};
-
-template<typename VertexType, typename EdgeType>
-inline Vertex<VertexType, EdgeType>::Vertex(VertexType v, EdgeType e)
-{
-	test = new Edge<VertexType, EdgeType>(e);
-	verval = v;
+    return dist_uniform_int(generator);
 }
 
-template<typename VertexType, typename EdgeType>
-inline Vertex<VertexType, EdgeType>::~Vertex()
+void ShowDegreeDistribution(AdjacencyMultiList::Graph<int, float>& target_graph)
 {
-	delete test;
-	test = nullptr;
+    std::cout << "number of vertices : " << target_graph.vertex_list.size() << std::endl;
+    std::cout << "number of edges : " << target_graph.GetEdgeNumber() << std::endl;
+    int degree_sum = 0;
+    for(AdjacencyMultiList::Vertex<int, float>* vertex : target_graph.vertex_list)
+    {
+        degree_sum += vertex->GetDegree();
+    }
+    std::cout << "vertex degree sum : " << degree_sum << std::endl;
+
+    int node_number = target_graph.vertex_list.size();
+
+    std::vector<int> histogram(node_number, 0);
+
+    for(int i = 0; i < node_number; i++)
+    {
+        histogram[target_graph.vertex_list[i]->CalculateDegree()] += 1;
+    }
+
+    if(histogram.size())
+        for(int i = 0; (i < histogram.size() && i < 20); i++)
+        {
+            std::cout << histogram[i] << "\t";
+            std::cout << std::string(histogram[i] / 50, '*') << std::endl;
+        }
+}
+
+void test1()
+{
+    namespace aml = AdjacencyMultiList;
+
+    int node_number = 10000;
+    int mean_degree = 4;
+    float connect_ratio = (float)mean_degree / (float)node_number;
+
+    aml::Graph<int, float> test_graph(node_number);
+
+    std::vector<int> histogram(node_number, 0);
+
+    std::minstd_rand generator_basic(42);
+
+    std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
+
+    Network::InitializeBANetwork(&test_graph, 2, node_number);
+
+    ShowDegreeDistribution(test_graph);
+
+    std::cout << "\n\n" << std::string(30, '*') << "\n";
+
+    std::cout << "er" << std::endl;
+
+    Network::InitializeERNetwork(&test_graph, 4, node_number);
+
+    ShowDegreeDistribution(test_graph);
+
+    char a;
+    std::cin >> a;
 }

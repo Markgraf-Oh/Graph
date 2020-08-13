@@ -4,7 +4,7 @@
 #include <stack>
 #include <array>
 #include <string>
-#include <list>
+#include <iostream>
 
 #define LINE_INFO (std::string(__FUNCTION__) + " in " + std::string(__FILE__) +"(line : " + std::to_string(__LINE__)+ ")")
 
@@ -45,6 +45,15 @@ namespace AdjacencyMultiList
 		}
 	};
 
+	void PrintError(std::string line_info, std::string errmessage)
+	{
+		std::cerr << line_info << " : " << errmessage << std::endl;
+	}
+
+	/**	Vertex Class for Adjacency Multi List Graph
+	*@tparam	VT	type of data witch will be stored inside vertex
+	*@tparam	ET	type of data witch will be stored inside edge
+	*/
 	template<typename VT = int, typename ET = float>
 	class Vertex
 	{
@@ -65,26 +74,31 @@ namespace AdjacencyMultiList
 		VT data;
 
 	protected:
+		//Doubly-Multi-Linked-List's first element
 		Edge<VT, ET>* front = nullptr;
+		
+		int degree = 0;
 
 		//함수
 	public:
-		/**	이 vertex의 linked list를 탐색하여 degree를 구합니다.
-		*@return	degree
+		/**	이 vertex의 linked list를 탐색하여 degree를 구하여 저장하고 return합니다.
+		*@return	degree of this vertex
 		*@note		그래프의 모든 vertex에 대해 이 함수를 실행해서 mean degree를 구하는 것은 리소스 낭비입니다.
 					그래프의 GetEdgeNumber를 사용하세요.
-		*@see		Graph<VT,ET>::GetEdgeNumber()
+		*@see		Graph<VT,ET>::GetEdgeNumber(), Vertex<VT,ET>::GetDegree()
 		*/
-		int GetDegree();
+		int CalculateDegree();
 
-		void DisConnectAll();
+		inline int GetDegree() const{ return degree; }
 
-		Edge<VT, ET>* GetFront();
+		Edge<VT, ET>* GetFront() const;
 
 		Edge<VT, ET>* GetBack();
 
 	protected:
-		void _DeleteEdge();//이건 graph쪽으로
+		/**	internal fuction to quickly delete all edges in graph.
+		*/
+		void _DeleteEdge();
 	};
 
 	/**	Edge Class for Adjacency Multi List Graph
@@ -126,7 +140,7 @@ namespace AdjacencyMultiList
 	public:
 		ET data;
 
-		bool mark = false;
+		mutable bool mark = false;
 
 	protected:
 		std::array<Vertex<VT, ET>*, 2> vertex{{nullptr, nullptr}};
@@ -135,20 +149,27 @@ namespace AdjacencyMultiList
 
 		//함수
 	public:
-		Edge<VT, ET>* GetNext(Vertex<VT, ET>* target_vertex);
+		Edge<VT, ET>* GetNext(Vertex<VT, ET>* target_vertex) const;
 
-		Edge<VT, ET>* GetBefore(Vertex<VT, ET>* target_vertex);
+		Edge<VT, ET>* GetBefore(Vertex<VT, ET>* target_vertex) const;
 
 		/**	주어진 vertex의 array 상에서의 index를 찾습니다.
 		*@return	해당 vertex를 찾으면 0 or 1
 		*			못찾으면 -1
 		*/
-		int FindIndex(Vertex<VT, ET>* target_vertex);
+		int FindIndex(Vertex<VT, ET>* target_vertex) const;
+
+		Vertex<VT, ET>* GetOpposite(Vertex<VT, ET>* vertex) const;
 
 	protected:
 		void append(Vertex<VT, ET>* target, Edge<VT, ET>* next_edge);
 	};
 
+
+	/**	Adjacency Multi List Graph
+	*@tparam	VT	type of data witch will be stored inside vertex
+	*@tparam	ET	type of data witch will be stored inside edge
+	*/
 	template<typename VT = int, typename ET = float>
 	class Graph
 	{
@@ -180,9 +201,9 @@ namespace AdjacencyMultiList
 
 		void Initialize();
 
-		bool IsConnected(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
+		bool IsConnected(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2) const;
 
-		bool IsConnected(int i, int j);
+		bool IsConnected(int i, int j) const;
 
 		std::vector<Edge<VT, ET>*> FindConnections(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
 		
@@ -196,6 +217,8 @@ namespace AdjacencyMultiList
 		Edge<VT, ET>* PopEdge(Edge<VT, ET>* target_edge, Vertex<VT, ET>* return_reference_vertex);
 		
 		void PopVertex(Vertex<VT, ET>* target);
+
+		typename std::vector<Vertex<VT, ET>*>::iterator PopVertex(typename std::vector<Vertex<VT, ET>*>::iterator taret_iterator);
 		
 		void ClearVertex();
 		//
@@ -207,6 +230,7 @@ namespace AdjacencyMultiList
 	template<typename VT, typename ET>
 	inline Vertex<VT, ET>::Vertex()
 	{
+		data = VT();
 	}
 
 	template<typename VT, typename ET>
@@ -220,30 +244,26 @@ namespace AdjacencyMultiList
 	{
 		if(front != nullptr)
 		{
-			DisConnectAll();
+			_DeleteEdge();
 		}
 	}
 
 	template<typename VT, typename ET>
-	inline int Vertex<VT, ET>::GetDegree()
+	inline int Vertex<VT, ET>::CalculateDegree()
 	{
-		int degree = 0;
+		int cal_degree = 0;
 		Edge<VT, ET>* current = front;
 		while(current != nullptr)
 		{
-			++degree;
+			++cal_degree;
 			current = current->GetNext(this);
 		}
-		return degree;
+		degree = cal_degree;
+		return cal_degree;
 	}
 
 	template<typename VT, typename ET>
-	inline void Vertex<VT, ET>::DisConnectAll()
-	{
-	}
-
-	template<typename VT, typename ET>
-	inline Edge<VT, ET>* Vertex<VT, ET>::GetFront()
+	inline Edge<VT, ET>* Vertex<VT, ET>::GetFront() const
 	{
 		return front;
 	}
@@ -263,6 +283,7 @@ namespace AdjacencyMultiList
 	template<typename VT, typename ET>
 	inline void Vertex<VT, ET>::_DeleteEdge()
 	{
+		if(front == nullptr) return;
 		Edge<VT, ET>* current = front;
 		std::stack<Edge<VT, ET>*> edge_stack;
 		while(current != nullptr)
@@ -285,12 +306,13 @@ namespace AdjacencyMultiList
 			edge_stack.pop();
 		}
 
-		this->front = nullptr;
+		front = nullptr;
+		degree = 0;
 	}
 
 
 	template<typename VT, typename ET>
-	inline Edge<VT, ET>* Edge<VT, ET>::GetNext(Vertex<VT, ET>* target_vertex)
+	inline Edge<VT, ET>* Edge<VT, ET>::GetNext(Vertex<VT, ET>* target_vertex) const
 	{
 		if(target_vertex == nullptr) return nullptr;
 
@@ -308,7 +330,7 @@ namespace AdjacencyMultiList
 	}
 
 	template<typename VT, typename ET>
-	inline Edge<VT, ET>* Edge<VT, ET>::GetBefore(Vertex<VT, ET>* target_vertex)
+	inline Edge<VT, ET>* Edge<VT, ET>::GetBefore(Vertex<VT, ET>* target_vertex) const
 	{
 		if(target_vertex == nullptr) return nullptr;
 
@@ -325,7 +347,7 @@ namespace AdjacencyMultiList
 	}
 
 	template<typename VT, typename ET>
-	inline int Edge<VT, ET>::FindIndex(Vertex<VT, ET>* target_vertex)
+	inline int Edge<VT, ET>::FindIndex(Vertex<VT, ET>* target_vertex) const
 	{
 		int selector;
 		if(vertex[0] == target_vertex)
@@ -339,6 +361,15 @@ namespace AdjacencyMultiList
 		else selector = -1;
 
 		return selector;
+	}
+
+	template<typename VT, typename ET>
+	inline Vertex<VT, ET>* Edge<VT, ET>::GetOpposite(Vertex<VT, ET>* target_vertex) const
+	{
+		if(target_vertex == nullptr) return nullptr;
+		if(vertex[0] == target_vertex) return vertex[1];
+		else if(vertex[1] == target_vertex) return vertex[0];
+		return nullptr; 
 	}
 
 	template<typename VT, typename ET>
@@ -360,6 +391,7 @@ namespace AdjacencyMultiList
 		}
 		this->next[selector] = next_edge;
 		next_edge->before[next_selector] = this;
+
 	}
 
 	template<typename VT, typename ET>
@@ -383,6 +415,7 @@ namespace AdjacencyMultiList
 	template<typename VT, typename ET>
 	inline void Graph<VT, ET>::Initialize(int init_vertex_number)
 	{
+		if(init_vertex_number < 0) return;
 		ClearVertex();
 		target_vertex_number = init_vertex_number;
 		vertex_list.reserve(init_vertex_number);
@@ -403,7 +436,7 @@ namespace AdjacencyMultiList
 	}
 
 	template<typename VT, typename ET>
-	inline bool Graph<VT, ET>::IsConnected(Vertex<VT, ET>* vertex0, Vertex<VT, ET>* vertex1)
+	inline bool Graph<VT, ET>::IsConnected(Vertex<VT, ET>* vertex0, Vertex<VT, ET>* vertex1) const
 	{
 		Edge<VT, ET>* edge_list = vertex0.front;
 		while(edge_list != nullptr)
@@ -420,7 +453,7 @@ namespace AdjacencyMultiList
 	}
 
 	template<typename VT, typename ET>
-	inline bool Graph<VT, ET>::IsConnected(int i, int j)
+	inline bool Graph<VT, ET>::IsConnected(int i, int j) const
 	{
 		if(i >= vertex_list.size() || j >= vertex_list.size() | i==j)
 			return false;
@@ -472,6 +505,8 @@ namespace AdjacencyMultiList
 		{
 			back2->append(vertex2, connector);
 		}
+		vertex1->degree++;
+		vertex2->degree++;
 
 		++current_edge_number;
 	}
@@ -542,6 +577,8 @@ namespace AdjacencyMultiList
 				int selector = next_edge->FindIndex(target_vertex);
 				next_edge->before[selector] = before_edge;//터진곳
 			}
+
+			target_vertex->degree--;
 		}
 
 		delete target_edge;
@@ -555,7 +592,7 @@ namespace AdjacencyMultiList
 	inline void Graph<VT, ET>::PopVertex(Vertex<VT, ET>* target)
 	{
 		int loc = -1;
-		for(int i = 0; vertex_list.size(); i++)
+		for(int i = 0; i < vertex_list.size(); i++)
 		{
 			if(vertex_list[i] == target)
 			{
@@ -575,6 +612,33 @@ namespace AdjacencyMultiList
 		target = nullptr;
 		std::swap(vertex_list[loc], vertex_list.back());
 		vertex_list.pop_back();
+	}
+
+	template<typename VT, typename ET>
+	inline typename std::vector<Vertex<VT, ET>*>::iterator Graph<VT, ET>::PopVertex(typename std::vector<Vertex<VT, ET>*>::iterator target_iterator)
+	{
+		if( ! ((vertex_list.begin() <= target_iterator) && (target_iterator < vertex_list.end())) )
+		{
+			PrintError(LINE_INFO, "invalid iterator");
+			return vertex_list.end();
+		}
+
+		Vertex<VT, ET>* target_vertex = *target_iterator;
+
+		if(target_vertex == nullptr)
+		{
+			return vertex_list.erase(target_iterator);
+		}
+
+		while(target_vertex->front != nullptr)
+		{
+			PopEdge(target_vertex->front, target_vertex);
+		}
+		delete target_vertex;
+		target_vertex = nullptr;
+		*target_iterator = nullptr;
+
+		return vertex_list.erase(target_iterator);
 	}
 
 
