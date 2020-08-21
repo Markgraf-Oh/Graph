@@ -1,6 +1,11 @@
 #pragma once
 
 #include <random>
+#include <algorithm>
+#include <thread>
+#include <future>
+#include <mutex>
+#include <iomanip>
 #include "AdjacencyMultiList.h"
 #include "Network.h"
 
@@ -39,7 +44,7 @@ void ShowDegreeDistribution(AdjacencyMultiList::Graph<int, float>& target_graph)
         }
 }
 
-void test1()
+void TestNeworkBuild()
 {
     namespace aml = AdjacencyMultiList;
 
@@ -55,18 +60,161 @@ void test1()
 
     std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
 
-    Network::InitializeBANetwork(&test_graph, 2, node_number);
+    std::cout << "Build Barabasi Albert Network" << std::endl;
+
+    Network::InitializeBANetwork(&test_graph, mean_degree, node_number);
 
     ShowDegreeDistribution(test_graph);
 
     std::cout << "\n\n" << std::string(30, '*') << "\n";
 
-    std::cout << "er" << std::endl;
+    std::cout << "Build ER Random Network" << std::endl;
 
-    Network::InitializeERNetwork(&test_graph, 4, node_number);
+    Network::InitializeERNetwork(&test_graph, mean_degree, node_number);
 
     ShowDegreeDistribution(test_graph);
 
     char a;
     std::cin >> a;
+}
+
+void TestClustering()
+{
+
+    namespace aml = AdjacencyMultiList;
+
+    int node_number = 10000;
+    int mean_degree = 4;
+    float connect_ratio = (float)mean_degree / (float)node_number;
+
+    aml::Graph<int, float> test_graph(node_number);
+
+    std::vector<int> histogram(node_number, 0);
+
+    std::minstd_rand generator_basic(42);
+
+    std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
+    
+    std::cout << "Build ER Random Network" << std::endl;
+
+    Network::InitializeERNetwork(&test_graph, mean_degree, node_number);
+
+    ShowDegreeDistribution(test_graph);
+
+    std::cout << "\n\n" << std::string(30, '*') << "\n";
+
+    std::vector<std::vector<aml::Vertex<int, float>*>> clusters;
+
+    Network::FindClusters(&test_graph, clusters);
+
+    for(int i = 0; i < std::min<int>(20, clusters.size()); i++)
+    {
+        std::cout << i << " : " << clusters[i].size() << std::endl;
+    }
+}
+
+//각 스레드에서 돌아갈 함수입니다.
+void ThreadBADegreeDistribution(int thread_id,
+                                std::size_t node_number,
+                                std::size_t connection_per_step,
+                                std::size_t loop_time,
+                                std::mutex &cout_mutex,
+                                std::promise<std::vector<double>> result_promise)
+{
+    const std::string mu("\u03BC");
+    cout_mutex.lock();
+    std::cout << "thread " << thread_id << " started\n";
+    cout_mutex.unlock();
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> start_point
+        = std::chrono::high_resolution_clock::now();
+
+    namespace AML = AdjacencyMultiList;
+    AML::Graph<int, float> network(node_number);
+    network.Initialize(node_number);
+    
+    std::vector<int> degree_count;
+    degree_count.reserve(node_number);
+
+    std::vector<double> degree_distribution(node_number, 0.0);
+
+    for(std::size_t i = 0; i < loop_time; i++)
+    {
+        Network::ConnectBANetwork(&network, connection_per_step);
+        degree_count.assign(node_number, 0);
+        for(AML::Vertex<int, float>* vertex : network.vertex_list)
+        {
+            degree_count[vertex->GetDegree()] += 1;
+        }
+        for(std::size_t i = 0; i < node_number; i++)
+        {
+            degree_distribution[i] += (double(degree_count[i]) / node_number) / loop_time;
+        }
+        network.ClearEdge();
+        degree_count.clear();
+
+        cout_mutex.lock();
+        std::cout << "thread " << thread_id << " loop " << i <<" ended\n";
+        cout_mutex.unlock();
+    }
+    result_promise.set_value(degree_distribution);
+    network.ClearVertex();
+
+    std::chrono::time_point<std::chrono::high_resolution_clock> end_point
+        = std::chrono::high_resolution_clock::now();
+
+    std::chrono::milliseconds deltatime
+        = std::chrono::duration_cast<std::chrono::milliseconds>(end_point - start_point);
+
+    cout_mutex.lock();
+    std::cout << "thread " << thread_id << " completed : " << deltatime.count() << "ms\n";
+    cout_mutex.unlock();
+}
+
+/** 멀티 스레딩을 통해 BA네트워크의 Degree Distribution을 구하는 예제함수입니다.
+*/
+void TestMultiThreadDegreeDistribution()
+{
+    namespace AML = AdjacencyMultiList;
+
+    const std::size_t node_number = 10000;
+    const std::size_t connection_per_step = 2;
+    const std::size_t thread_number = 10;
+    const std::size_t loop_per_thread = 10;
+
+    std::vector<double> degree_distribution;
+    std::mutex cout_mutex;
+
+    std::promise<std::vector<double>> promise;
+    std::vector<std::future<std::vector<double>>> results;
+    std::vector<std::thread> threads;
+    for(std::size_t i = 0; i < thread_number; i++)
+    {
+        promise = std::promise<std::vector<double>>();
+        results.push_back(promise.get_future());
+        threads.emplace_back(ThreadBADegreeDistribution, i, node_number, connection_per_step, loop_per_thread, std::ref(cout_mutex), std::move(promise));
+    }
+
+    for(std::size_t i = 0; i < thread_number; i++)
+    {
+        threads[i].join();
+        std::vector<double> result = results[i].get();
+        if(result.size() > degree_distribution.size())
+        {
+            degree_distribution.resize(result.size(), 0.0);
+        }
+        for(std::size_t j = 0; j < result.size(); j++)
+        {
+            degree_distribution[j] += result[j];
+        }
+    }
+    for(std::size_t j = 0; j < degree_distribution.size(); j++)
+    {
+        degree_distribution[j] /= int(thread_number);
+    }
+
+    for(int i = 0; i < 20; i++)
+    {
+        std::cout << std::setw(10) << degree_distribution[i] << " " << std::string(degree_distribution[i]/0.01, '*') << "\n";
+    }
 }

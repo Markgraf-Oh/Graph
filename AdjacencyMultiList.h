@@ -50,6 +50,7 @@ namespace AdjacencyMultiList
 		std::cerr << line_info << " : " << errmessage << std::endl;
 	}
 
+
 	/**	Vertex Class for Adjacency Multi List Graph
 	*@tparam	VT	type of data witch will be stored inside vertex
 	*@tparam	ET	type of data witch will be stored inside edge
@@ -72,6 +73,8 @@ namespace AdjacencyMultiList
 		//변수
 	public:
 		VT data;
+
+		int index = 0;
 
 	protected:
 		//Doubly-Multi-Linked-List's first element
@@ -216,7 +219,9 @@ namespace AdjacencyMultiList
 
 		Edge<VT, ET>* PopEdge(Edge<VT, ET>* target_edge, Vertex<VT, ET>* return_reference_vertex);
 		
-		void PopVertex(Vertex<VT, ET>* target);
+		void PopVertex(Vertex<VT, ET>* &target);
+
+		void PopVertex(int target_index);
 
 		typename std::vector<Vertex<VT, ET>*>::iterator PopVertex(typename std::vector<Vertex<VT, ET>*>::iterator taret_iterator);
 		
@@ -224,7 +229,7 @@ namespace AdjacencyMultiList
 		//
 		void ClearEdge();
 
-	
+		void ResetVertexIndex();
 	};
 
 	template<typename VT, typename ET>
@@ -438,7 +443,7 @@ namespace AdjacencyMultiList
 	template<typename VT, typename ET>
 	inline bool Graph<VT, ET>::IsConnected(Vertex<VT, ET>* vertex0, Vertex<VT, ET>* vertex1) const
 	{
-		Edge<VT, ET>* edge_list = vertex0.front;
+		Edge<VT, ET>* edge_list = vertex0->GetFront();
 		while(edge_list != nullptr)
 		{
 			if(edge_list->vertex[0] == vertex0 && edge_list->vertex[1] == vertex1)
@@ -455,7 +460,7 @@ namespace AdjacencyMultiList
 	template<typename VT, typename ET>
 	inline bool Graph<VT, ET>::IsConnected(int i, int j) const
 	{
-		if(i >= vertex_list.size() || j >= vertex_list.size() | i==j)
+		if((i >= vertex_list.size() || j >= vertex_list.size()) || i==j)
 			return false;
 
 		return this->IsConnected(vertex_list[i], vertex_list[j]);
@@ -543,12 +548,6 @@ namespace AdjacencyMultiList
 			return nullptr;
 		}
 
-		if(return_reference_vertex == nullptr)
-		{
-			std::cerr << LINE_INFO << " : target_edge == nullptr" << std::endl;
-			return nullptr;
-		}
-
 		if(target_edge->FindIndex(return_reference_vertex) < 0)
 		{
 			std::cerr << LINE_INFO << " : edge and vertex is not related" << std::endl;
@@ -575,7 +574,7 @@ namespace AdjacencyMultiList
 			if(next_edge != nullptr)
 			{
 				int selector = next_edge->FindIndex(target_vertex);
-				next_edge->before[selector] = before_edge;//터진곳
+				next_edge->before[selector] = before_edge;
 			}
 
 			target_vertex->degree--;
@@ -589,29 +588,31 @@ namespace AdjacencyMultiList
 	}
 
 	template<typename VT, typename ET>
-	inline void Graph<VT, ET>::PopVertex(Vertex<VT, ET>* target)
+	inline void Graph<VT, ET>::PopVertex(Vertex<VT, ET>* &target)
 	{
-		int loc = -1;
-		for(int i = 0; i < vertex_list.size(); i++)
-		{
-			if(vertex_list[i] == target)
-			{
-				loc = i;
-				break;
-			}
-		}
+		typename std::vector<Vertex<VT, ET>*>::iterator target_iter = std::find(vertex_list.begin(), vertex_list.end(), target);
 
-		if(loc <0)
+		if(target_iter == vertex_list.end())
 			throw std::invalid_argument("target vertex is not included in this graph");
 
 		while(target->front != nullptr)
 		{
-			PopEdge(target->front, target);
+			PopEdge(target->GetFront(), target);
 		}
+
 		delete target;
 		target = nullptr;
-		std::swap(vertex_list[loc], vertex_list.back());
-		vertex_list.pop_back();
+
+		vertex_list.erase(target_iter);
+	}
+
+	template<typename VT, typename ET>
+	inline void Graph<VT, ET>::PopVertex(int target_index)
+	{
+		if(target_index < 0 || target_index > vertex_list.size()) throw std::out_of_range("given index is out of range");
+		typename std::vector<Vertex<VT, ET>*>::iterator iter = vertex_list.begin()[target_index];
+		
+		PopVertex(iter);
 	}
 
 	template<typename VT, typename ET>
@@ -662,6 +663,15 @@ namespace AdjacencyMultiList
 			vertex->_DeleteEdge();
 		}
 		current_edge_number = 0;
+	}
+
+	template<typename VT, typename ET>
+	inline void Graph<VT, ET>::ResetVertexIndex()
+	{
+		for(int i = 0; i < vertex_list.size(); i++)
+		{
+			vertex_list[i]->index = i;
+		}
 	}
 
 }

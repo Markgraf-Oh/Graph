@@ -18,6 +18,9 @@ namespace Network
 
     template<typename VT, typename ET>
     void InitializeBANetwork(AML::Graph<VT, ET>* network, int connection_per_step, int network_size);
+
+    template<typename VT, typename ET>
+    void FindClusters(AML::Graph<VT, ET>* network, std::vector<std::vector<AML::Vertex<VT, ET>*>> & return_reference);
 }
 
 template<typename VT, typename ET>
@@ -91,16 +94,23 @@ void Network::ConnectBANetwork(AML::Graph<VT, ET>* network, int connection_per_s
 
     for(int i = init_size; i < network->vertex_list.size(); i++)
     {
-        int target_degree_cumulative = int(uniform_dist(generator) * network->GetEdgeNumber() * 2);
-        int current_degree_cumulative = 0;
-        int target_index = 0;
-        while(target_index < i-1)
+        for(int j = 0; j < connection_per_step;)
         {
-            current_degree_cumulative += network->vertex_list[target_index]->GetDegree();
-            if(current_degree_cumulative >= target_degree_cumulative) break;
-            target_index++;
+            int target_degree_cumulative = int(uniform_dist(generator) * network->GetEdgeNumber() * 2);
+            int current_degree_cumulative = 0;
+            int target_index = 0;
+            while(target_index < i - 1)
+            {
+                current_degree_cumulative += network->vertex_list[target_index]->GetDegree();
+                if(current_degree_cumulative >= target_degree_cumulative) break;
+                target_index++;
+            }
+
+            if(network->IsConnected(i, target_index)) continue;
+
+            network->Connect(i, target_index);
+            j++;
         }
-        network->Connect(i, target_index);
     }
 }
 
@@ -115,4 +125,48 @@ void Network::InitializeBANetwork(AML::Graph<VT, ET>* network, int connection_pe
     network->Initialize(network_size);
 
     ConnectBANetwork(network, connection_per_step);
+}
+
+template<typename VT, typename ET>
+void Network::FindClusters(AML::Graph<VT, ET>* network, std::vector<std::vector<AML::Vertex<VT, ET>*>>& clusters_return)
+{
+    clusters_return.clear();
+    network->ResetVertexIndex();
+
+    std::vector<bool> vertex_marker(network->vertex_list.size(), false);
+    
+    std::deque<AML::Vertex<VT, ET>*> BFSQueue;
+    
+    for(int i = 0; i < network->vertex_list.size(); i++)
+    {
+        if(vertex_marker[i] == true) continue;
+
+        //initialize
+        vertex_marker[i] = true;
+        BFSQueue.clear();
+        clusters_return.push_back(std::vector<AML::Vertex<VT, ET>*>());
+        std::vector<AML::Vertex<VT, ET>*> &cluster = clusters_return.back();
+
+        //Broad First Search
+        BFSQueue.push_back(network->vertex_list[i]);
+
+        while(!BFSQueue.empty())
+        {
+            AML::Vertex<VT, ET>* current_vertex = BFSQueue.front();
+            AML::Edge<VT, ET>* current_edge = current_vertex->GetFront();
+            
+            while(current_edge != nullptr)
+            {
+                AML::Vertex<VT, ET>* opposite = current_edge->GetOpposite(current_vertex);
+                if((opposite != nullptr) && (vertex_marker[opposite->index] == false))
+                {
+                    BFSQueue.push_back(opposite);
+                    vertex_marker[opposite->index] = true;
+                }
+                current_edge = current_edge->GetNext(current_vertex);
+            }
+            cluster.push_back(current_vertex);
+            BFSQueue.pop_front();
+        }
+    }
 }
