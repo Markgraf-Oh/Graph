@@ -98,6 +98,12 @@ namespace AdjacencyMultiList
 
 		Edge<VT, ET>* GetBack();
 
+		std::vector<Vertex<VT, ET>*> GetOpposites();
+
+		std::vector<Edge<VT, ET>*> GetEdges();
+
+		void ResetEdgeMark();
+
 	protected:
 		/**	internal fuction to quickly delete all edges in graph.
 		*/
@@ -163,6 +169,8 @@ namespace AdjacencyMultiList
 		int FindIndex(Vertex<VT, ET>* target_vertex) const;
 
 		Vertex<VT, ET>* GetOpposite(Vertex<VT, ET>* vertex) const;
+
+		std::array<Vertex<VT, ET>*, 2> GetVertex(){return vertex;}
 
 	protected:
 		void append(Vertex<VT, ET>* target, Edge<VT, ET>* next_edge);
@@ -230,6 +238,8 @@ namespace AdjacencyMultiList
 		void ClearEdge();
 
 		void ResetVertexIndex();
+
+		void ResetAllEdgeMark();
 	};
 
 	template<typename VT, typename ET>
@@ -283,6 +293,43 @@ namespace AdjacencyMultiList
 			back = back->GetNext(this);
 		}
 		return back;
+	}
+
+	template<typename VT, typename ET>
+	inline std::vector<Vertex<VT, ET>*> Vertex<VT, ET>::GetOpposites()
+	{
+		std::vector<Vertex<VT, ET>*> opposites;
+		Edge<VT, ET>* current_edge = front;
+		while(current_edge != nullptr)
+		{
+			opposites.push_back(current_edge->GetOpposite(this));
+			current_edge = current_edge->GetNext(this);
+		}
+		return opposites;
+	}
+
+	template<typename VT, typename ET>
+	inline std::vector<Edge<VT, ET>*> Vertex<VT, ET>::GetEdges()
+	{
+		std::vector<Edge<VT, ET>*> edges;
+		Edge<VT, ET>* current_edge = front;
+		while(current_edge != nullptr)
+		{
+			edges.push_back(current_edge);
+			current_edge = current_edge->GetNext(this);
+		}
+		return edges;
+	}
+
+	template<typename VT, typename ET>
+	inline void Vertex<VT, ET>::ResetEdgeMark()
+	{
+		Edge<VT, ET>* current_edge = front;
+		while(current_edge != nullptr)
+		{
+			current_edge->mark = false;
+			current_edge = current_edge->GetNext(this);
+		}
 	}
 
 	template<typename VT, typename ET>
@@ -671,6 +718,15 @@ namespace AdjacencyMultiList
 		for(int i = 0; i < vertex_list.size(); i++)
 		{
 			vertex_list[i]->index = i;
+		}
+	}
+
+	template<typename VT, typename ET>
+	inline void Graph<VT, ET>::ResetAllEdgeMark()
+	{
+		for(Vertex<VT, ET>* vertex : vertex_list)
+		{
+			vertex->ResetEdgeMark();
 		}
 	}
 
