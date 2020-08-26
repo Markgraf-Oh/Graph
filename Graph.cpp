@@ -8,7 +8,13 @@
 
 int main()
 {
-    Test::TestKruskalAlgorithm(10, 2);
+    Test::TestPrimAlgorithm(200, 2);
+    Test::TestKruskalAlgorithm(200, 2);
+    Test::TestPrimAlgorithm(200, 4);
+    Test::TestKruskalAlgorithm(200, 4);
+    Test::TestPrimAlgorithm(200, 8);
+    Test::TestKruskalAlgorithm(200, 8);
+
 }
 
 // 프로그램 실행: <Ctrl+F5> 또는 [디버그] > [디버깅하지 않고 시작] 메뉴

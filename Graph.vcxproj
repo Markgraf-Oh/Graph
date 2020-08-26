@@ -147,6 +147,7 @@
     <ClInclude Include="test.h" />
     <ClInclude Include="AdjacencyMultiList.h" />
     <ClInclude Include="Network.h" />
+    <ClInclude Include="UnionFind.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

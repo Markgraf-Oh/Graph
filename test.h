@@ -332,11 +332,11 @@ namespace Test
             }            
         }
 
-        std::cout << "Start Prim ALgorithm\n";
+        std::cout << "Start Kruskal ALgorithm\n";
 
         network.ResetAllEdgeMark();
 
-        BenchMark::Timer timer("PrimAlgorithm");
+        BenchMark::Timer timer("KruskalAlgorithm");
 
         std::vector<AML::Edge<int, float>*> result
             = MST::KruskalAlgorithm<int, float>([](AML::Edge<int, float>* &target_edge)->float{return target_edge->data; },
@@ -348,6 +348,16 @@ namespace Test
         std::cout << "Spanning Tree Edge Count : " << result.size() << std::endl;
 
         std::cout << "\n" << std::string(30, '*') << "\n\n";
+
+        //show spanning tree 
+        /*
+        for(AML::Edge<int, float>* edge : result)
+        {
+            std::cout << edge->GetVertex(0)->index << " - " << edge->GetVertex(1)->index << "\n";
+        }
+
+        std::cout << "\n" << std::string(30, '*') << "\n\n";
+        */
     }
 
 #pragma endregion Define functions

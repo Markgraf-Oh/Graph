@@ -170,7 +170,13 @@ namespace AdjacencyMultiList
 
 		Vertex<VT, ET>* GetOpposite(Vertex<VT, ET>* vertex) const;
 
-		std::array<Vertex<VT, ET>*, 2> GetVertex(){return vertex;}
+		std::array<Vertex<VT, ET>*, 2> GetVertex(){ return vertex; }
+
+		Vertex<VT, ET>* GetVertex(int index)
+		{ 
+			if(index < 0 || 1 < index) return nullptr;
+			return vertex[index];
+		}
 
 	protected:
 		void append(Vertex<VT, ET>* target, Edge<VT, ET>* next_edge);

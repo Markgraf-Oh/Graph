@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AdjacencyMultiList.h"
+#include "UnionFind.h"
 #include <random>
 #include <ctime>
 #include <queue>
@@ -76,12 +77,12 @@ namespace MinimunSpanningTree
 		if(network_size < 2) return result_edges;
 		result_edges.reserve(network_size - 1);
 
-		const int max_size = 10000;
-		const int number_of_queue = (target_graph->vertex_list.size() / max_size) + 1;
+		const int edge_queue_max_size = 50000;
+		const int number_of_queue = (target_graph->GetEdgeNumber() / edge_queue_max_size) + 1;
 
 		target_graph->ResetVertexIndex();
 
-		std::vector<bool> visited_mark(target_graph->vertex_list.size(), false);
+		UnionFindTree union_find_tree(network_size);
 
 		auto comp = [&GetEdgeWeight](AML::Edge<VT, ET>* &back, AML::Edge<VT, ET>* &front)
 			-> bool { return GetEdgeWeight(back) > GetEdgeWeight(front); };
@@ -103,16 +104,11 @@ namespace MinimunSpanningTree
 				if(!current_edge->mark)
 				{
 					current_edge->mark = true;
-					edge_queues[edge_counter / max_size].push(current_edge);
+					edge_queues[edge_counter / edge_queue_max_size].push(current_edge);
 					++edge_counter;
 				}
 				current_edge = current_edge->GetNext(vertex);
 			}
-		}
-
-		for(int i = 0; i < number_of_queue; i++)
-		{
-			std::cout << edge_queues[i].size() << std::endl;
 		}
 
 		while(result_edges.size() < network_size - 1)
@@ -139,20 +135,10 @@ namespace MinimunSpanningTree
 			AML::Edge<VT, ET>* target_edge = edge_queues[target_index].top();
 			edge_queues[target_index].pop();
 
-			//check_cycle_here using DFS
-			AML::Vertex<VT, ET>* current_vertex = target_edge->GetVertex()[0];
-
-			//del
-			std::array<AML::Vertex<VT, ET>*, 2> vertexs = target_edge->GetVertex();
-			
-			if(visited_mark[vertexs[0]->index] && visited_mark[vertexs[1]->index])
-				continue;
-
-			visited_mark[vertexs[0]->index] = true;
-			visited_mark[vertexs[1]->index] = true;
-			//del
-
-			result_edges.push_back(target_edge);
+			//union-find algorithm »ç¿ë.
+						
+			if(union_find_tree.Union(target_edge->GetVertex(0)->index, target_edge->GetVertex(1)->index))
+				result_edges.push_back(target_edge);
 		}
 		return result_edges;
 	}
