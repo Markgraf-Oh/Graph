@@ -10,21 +10,45 @@ namespace MinimunSpanningTree
 {
 	namespace AML = AdjacencyMultiList;
 
+	/** Find Minimum Spanning Tree of given graph by using Prim-Algorithm. 주어진 그래프에서 프림 알고리즘을 이용해 최소신장트리를 구합니다.
+	* @param	*GetEdgeWeight	: The Fuction which get weight from the pointer of edge
+	* @param	target_graph	: pointer of graph
+	* @param	start_index		: index to start seaching. if out of range, the fuction will use random index.
+	* @return	the std::vector of selected edges which form the spanning tree
+	* @tparam	VT	: type of vertex's data
+	* @tparam	ET	: type of edge's data
+	* @note	time complexity : if used binary heap and adjacency list, O(E(log(V)))
+	*/
 	template<typename VT, typename ET>
-	std::vector<AML::Edge<VT, ET>*> PrimAlgorithm(float (*GetEdgeWeight)(AML::Edge<VT, ET>* &), AML::Graph<VT, ET> *target_graph, int start_index = -1)
+	std::vector<AML::Edge<VT, ET>*> PrimAlgorithm(float (*GetEdgeWeight)(AML::Edge<VT, ET>* &), AML::Graph<VT, ET> *target_graph, int start_index = -1);
+
+	/** Find Minimum Spanning Tree of given graph by using Kruskal-Algorithm. 주어진 그래프에서 크루스칼 알고리즘을 이용해 최소신장트리를 구합니다.
+	* @param	*GetEdgeWeight	: The Fuction which get weight from the pointer of edge
+	* @param	target_graph	: pointer of graph
+	* @return	the std::vector of selected edges which form the spanning tree
+	* @tparam	VT	: type of vertex's data
+	* @tparam	ET	: type of edge's data
+	* @note	time complexity : O(E(log(E)))
+	*/
+	template<typename VT, typename ET>
+	std::vector<AML::Edge<VT, ET>*> KruskalAlgorithm(float (*GetEdgeWeight)(AML::Edge<VT, ET>* &), AML::Graph<VT, ET> *target_graph);
+
+	template<typename VT, typename ET>
+	std::vector<AML::Edge<VT, ET>*> PrimAlgorithm(float (*GetEdgeWeight)(AML::Edge<VT, ET>* &), AML::Graph<VT, ET> *target_graph, int start_index)
 	{
 		std::vector<AML::Edge<VT, ET>*> result_edges;
-		if(target_graph->vertex_list.size() < 2) return result_edges;
-		result_edges.reserve(target_graph->vertex_list.size() - 1);
-		if(start_index < 0)
+		const int network_size = target_graph->vertex_list.size();
+		if(network_size < 2) return result_edges;
+		result_edges.reserve(network_size - 1);
+		if(start_index < 0 || network_size <= start_index)
 		{
 			srand(time(NULL));
-			start_index = rand() % target_graph->vertex_list.size();
+			start_index = rand() % network_size;
 		}
 
 		target_graph->ResetVertexIndex();
 
-		std::vector<bool> visited_mark(target_graph->vertex_list.size(), false);
+		std::vector<bool> visited_mark(network_size, false);
 
 		auto comp = [&GetEdgeWeight](AML::Edge<VT, ET>* &back, AML::Edge<VT, ET>* &front)
 			-> bool { return GetEdgeWeight(back) > GetEdgeWeight(front); };

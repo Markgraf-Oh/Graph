@@ -10,6 +10,7 @@
 #include "Network.h"
 #include "MinimumSpanningTree.h"
 #include "BenchMark.h"
+#include "ShortestPath.h"
 
 namespace Test
 {
@@ -360,8 +361,67 @@ namespace Test
         */
     }
 
-#pragma endregion Define functions
+    void TestDijkstraAlgorithmPath(int network_size, int connection_step)
+    {
+        std::cout << "Creating BA Network Graph\n";
+        namespace AML = AdjacencyMultiList;
+        namespace MST = MinimunSpanningTree;
+        AML::Graph<int, float> network(network_size);
+        Network::InitializeBANetwork(&network, connection_step, network_size);
 
+        std::random_device rande;
+
+        std::minstd_rand generator(rande());
+
+        std::uniform_real_distribution<float> uniform_dist(0.1f, 1.0f);
+
+        std::cout << "Initialize Edge weight\n";
+        for(AML::Vertex<int, float>* vertex : network.vertex_list)
+        {
+            AML::Edge<int, float>* current_edge = vertex->GetFront();
+            while(current_edge != nullptr)
+            {
+                if(!current_edge->mark)
+                {
+                    current_edge->data = uniform_dist(generator);
+                    current_edge->mark = true;
+                }
+                current_edge = current_edge->GetNext(vertex);
+            }
+        }
+
+        std::cout << "Start Kruskal ALgorithm\n";
+
+        BenchMark::Timer timer("DijkstraAlgorithmPath");
+
+        std::vector<AML::Vertex<int, float>*> result
+            = ShortestPath::DijkstraAlgorithmPath<int, float>(&network, [](AML::Edge<int, float>* &target_edge)->float{return target_edge->data; }, network.vertex_list[10], network.vertex_list[5000]);
+
+        timer.Stop();
+
+        std::cout << "Graph Vertex Count : " << network.vertex_list.size() << std::endl;
+        std::cout << "Graph Edge Count : " << network.GetEdgeNumber() << std::endl;
+        std::cout << "Spanning Tree Edge Count : " << result.size() << std::endl;
+
+        std::cout << "\n" << std::string(30, '*') << "\n\n";
+        result.insert(result.begin(), network.vertex_list[10]);
+        result.insert(result.end(), network.vertex_list[5000]);
+        //show path
+        for(AML::Vertex<int, float>* vertex : result)
+        {
+            std::cout << vertex->index << " ";
+        }
+        std::cout << std::endl;
+
+        for(int i = 0; i < result.size() - 1; i++)
+        {
+            std::cout << (network.IsConnected(result[i], result[i + 1]) ? "true" : "false") << " ";
+        }
+        std::cout << std::endl;
+
+    }
+
+#pragma endregion Define functions
 }
 
 

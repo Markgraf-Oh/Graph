@@ -8,12 +8,7 @@
 
 int main()
 {
-    Test::TestPrimAlgorithm(200, 2);
-    Test::TestKruskalAlgorithm(200, 2);
-    Test::TestPrimAlgorithm(200, 4);
-    Test::TestKruskalAlgorithm(200, 4);
-    Test::TestPrimAlgorithm(200, 8);
-    Test::TestKruskalAlgorithm(200, 8);
+    Test::TestDijkstraAlgorithmPath(10000, 3);
 
 }
 

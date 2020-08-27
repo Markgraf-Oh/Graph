@@ -7,18 +7,28 @@ namespace Network
 {
 	namespace AML = AdjacencyMultiList;
 	
+    /** Clear the Network and Connect Nodes to make ER Network
+    */
     template<typename VT, typename ET>
     void ConnectERNetwork(AML::Graph<VT, ET>* network, int mean_degree);
 
+    /** Initialize Network with given size and Connect Nodes to make ER Network
+    */
     template<typename VT, typename ET>
     void InitializeERNetwork(AML::Graph<VT, ET>* network, int mean_degree, int network_size = 0);
 
+    /** Clear the Network and Connect Nodes to make Barabasi-Albert Network
+    */
     template<typename VT, typename ET>
     void ConnectBANetwork(AML::Graph<VT, ET>* network, int connection_per_step);
 
+    /** Initialize Network with given size and Connect Nodes to make Barabasi-Albert Network
+    */
     template<typename VT, typename ET>
     void InitializeBANetwork(AML::Graph<VT, ET>* network, int connection_per_step, int network_size);
 
+    /** sort by clusters
+    */
     template<typename VT, typename ET>
     void FindClusters(AML::Graph<VT, ET>* network, std::vector<std::vector<AML::Vertex<VT, ET>*>> & return_reference);
 }

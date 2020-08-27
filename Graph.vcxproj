@@ -144,6 +144,7 @@
   <ItemGroup>
     <ClInclude Include="BenchMark.h" />
     <ClInclude Include="MinimumSpanningTree.h" />
+    <ClInclude Include="ShortestPath.h" />
     <ClInclude Include="test.h" />
     <ClInclude Include="AdjacencyMultiList.h" />
     <ClInclude Include="Network.h" />

@@ -4,14 +4,13 @@
 
 #include <string>
 #include <chrono>
-#include <algorithm>
-#include <fstream>
 #include <thread>
 #include <iostream>
 #include <sstream>
 
 namespace BenchMark
 {
+    //timer class for benchmarking
     class Timer
     {
     public:
