@@ -8,7 +8,7 @@
 
 int main()
 {
-    Test::TestDijkstraAlgorithmPath(10000, 3);
+    Test::ComparePathFinding(40, 40);
 
 }
 

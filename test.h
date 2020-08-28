@@ -390,7 +390,7 @@ namespace Test
             }
         }
 
-        std::cout << "Start Kruskal ALgorithm\n";
+        std::cout << "Start Dijkstra ALgorithm\n";
 
         BenchMark::Timer timer("DijkstraAlgorithmPath");
 
@@ -419,6 +419,112 @@ namespace Test
         }
         std::cout << std::endl;
 
+    }
+
+    void ComparePathFinding(int x_size, int y_size)
+    {
+        //Create Lattice Network
+        std::cout << "Creating Lattice Network Graph\n";
+        namespace AML = AdjacencyMultiList;
+        AML::Graph<std::pair<int, int>, float> lattice;
+
+        Network::InitializeLatticeNetwork(&lattice, x_size, y_size);
+
+        for(int x = 0; x < x_size; x++)
+        {
+            for(int y = 0; y <  y_size; y++)
+            {
+                lattice.vertex_list[x * x_size + y]->data = std::pair<int, int>(x, y);
+            }
+        }
+
+        //percolation
+        std::cout << "Percolation\n";
+        std::random_device rande;
+
+        std::minstd_rand generator(rande());
+
+        std::uniform_real_distribution<float> uniform_dist(0.0f, 1.0f);
+
+        int vertex_number = lattice.vertex_list.size();
+
+        for(int x = x_size / 4; x < (3 * x_size) / 4; x++)
+        {
+            for(int y = y_size / 4; y < (3 * y_size) / 4; y++)
+            {
+                int index = x * x_size + y;
+                if(uniform_dist(generator) < 0.8f)
+                    lattice.PopVertex(index);
+            }
+        }
+
+        std::cout << "Graph Vertex Count : " << lattice.vertex_list.size() << std::endl;
+        std::cout << "Graph Edge Count : " << lattice.GetEdgeNumber() << std::endl;
+
+        AML::Vertex<std::pair<int, int>, float>* start_vertex = lattice.vertex_list.front();
+        AML::Vertex<std::pair<int, int>, float>* end_vertex = lattice.vertex_list.back();
+
+        std::cout << "Start A* ALgorithm\n";
+
+        auto GetWeight = [](AML::Edge<std::pair<int, int>, float>* & target_edge)->float
+        {
+            return 1.0f;
+        };
+
+        auto Heuristic = [](AML::Vertex<std::pair<int, int>, float>* & current_vertex, AML::Vertex<std::pair<int, int>, float>* &end_vertex)->float
+        {
+            return float(pow(double(end_vertex->data.first) - double(current_vertex->data.first), 2.0) + pow(double(end_vertex->data.second) - double(current_vertex->data.second), 2.0));
+        };
+
+        BenchMark::Timer timer1("A*AlgorithPathh");
+
+        std::vector<AML::Vertex<std::pair<int, int>, float>*> result
+            = ShortestPath::AStarAlgorithm<std::pair<int, int>, float>(&lattice, GetWeight, Heuristic, start_vertex, end_vertex);
+            //= ShortestPath::DijkstraAlgorithmPath<int, float>(&network, [](AML::Edge<int, float>* &target_edge)->float{return target_edge->data; }, network.vertex_list[10], network.vertex_list[5000]);
+
+        timer1.Stop();
+        std::cout << "Distance Count : " << result.size() << std::endl;
+
+        std::cout << "\n" << std::string(30, '*') << "\n\n";
+
+        //show path
+        std::vector<std::string> map(y_size, std::string(x_size, '0'));
+
+        for(auto vertex : result)
+        {
+            map[vertex->data.second][vertex->data.first] = '1';
+            //std::cout << "(" << vertex->data.first << "," << vertex->data.second << ")\n";
+        }
+        for(auto line : map)
+            std::cout << line << std::endl;
+
+        std::cout << "\n" << std::string(30, '*') << "\n\n";
+
+        result.clear();
+        BenchMark::Timer timer2("DijkstraAlgorithmPath");
+
+        result
+            = ShortestPath::DijkstraAlgorithmPath<std::pair<int, int>, float>(&lattice, GetWeight, start_vertex, end_vertex);
+            //= ShortestPath::AStarAlgorithm<std::pair<int, int>, float>(&lattice, GetWeight, Heuristic, start_vertex, end_vertex);
+        //= ShortestPath::DijkstraAlgorithmPath<int, float>(&network, [](AML::Edge<int, float>* &target_edge)->float{return target_edge->data; }, network.vertex_list[10], network.vertex_list[5000]);
+
+        timer2.Stop();
+        std::cout << "Distance Count : " << result.size() << std::endl;
+
+        std::cout << "\n" << std::string(30, '*') << "\n\n";
+
+        //show path
+        std::vector<std::string> map2(y_size, std::string(x_size, '0'));
+
+        for(auto vertex : result)
+        {
+            map2[vertex->data.second][vertex->data.first] = '1';
+            //std::cout << "(" << vertex->data.first << "," << vertex->data.second << ")\n";
+        }
+        for(auto line : map2)
+            std::cout << line << std::endl;
+
+        std::cout << "\n" << std::string(30, '*') << "\n\n";
     }
 
 #pragma endregion Define functions

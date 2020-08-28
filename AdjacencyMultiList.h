@@ -214,6 +214,8 @@ namespace AdjacencyMultiList
 
 		int GetEdgeNumber(){ return current_edge_number; };
 		//
+		void Initialize(int init_vertex_number, VT init_data);
+
 		void Initialize(int init_vertex_number);
 
 		void Initialize();
@@ -471,6 +473,19 @@ namespace AdjacencyMultiList
 	}
 
 	template<typename VT, typename ET>
+	inline void Graph<VT, ET>::Initialize(int init_vertex_number, VT init_data)
+	{
+		if(init_vertex_number < 0) return;
+		ClearVertex();
+		target_vertex_number = init_vertex_number;
+		vertex_list.reserve(init_vertex_number);
+		for(int i = 0; i < target_vertex_number; i++)
+		{
+			vertex_list.push_back(new Vertex<VT, ET>(init_data));
+		}
+	}
+
+	template<typename VT, typename ET>
 	inline void Graph<VT, ET>::Initialize(int init_vertex_number)
 	{
 		if(init_vertex_number < 0) return;
@@ -663,9 +678,8 @@ namespace AdjacencyMultiList
 	inline void Graph<VT, ET>::PopVertex(int target_index)
 	{
 		if(target_index < 0 || target_index > vertex_list.size()) throw std::out_of_range("given index is out of range");
-		typename std::vector<Vertex<VT, ET>*>::iterator iter = vertex_list.begin()[target_index];
-		
-		PopVertex(iter);
+				
+		PopVertex(vertex_list[target_index]);
 	}
 
 	template<typename VT, typename ET>

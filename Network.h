@@ -27,6 +27,11 @@ namespace Network
     template<typename VT, typename ET>
     void InitializeBANetwork(AML::Graph<VT, ET>* network, int connection_per_step, int network_size);
 
+    /** Clear the Network and Connect Nodes to make Barabasi-Albert Network
+    */
+    template<typename VT, typename ET>
+    void InitializeLatticeNetwork(AML::Graph<VT, ET>* network, int x, int y);
+
     /** sort by clusters
     */
     template<typename VT, typename ET>
@@ -74,7 +79,7 @@ void Network::InitializeERNetwork(AML::Graph<VT, ET>* network, int mean_degree, 
     if(network_size <= 0 ) throw std::invalid_argument("network_size <= 0");
 
     network->Initialize(network_size);
-    ConnectERNetwork(network, mean_degree);
+    Network::ConnectERNetwork(network, mean_degree);
 }
 
 template<typename VT, typename ET>
@@ -134,7 +139,36 @@ void Network::InitializeBANetwork(AML::Graph<VT, ET>* network, int connection_pe
 
     network->Initialize(network_size);
 
-    ConnectBANetwork(network, connection_per_step);
+    Network::ConnectBANetwork(network, connection_per_step);
+}
+
+template<typename VT, typename ET>
+void Network::InitializeLatticeNetwork(AML::Graph<VT, ET>* network, int x_size, int y_size)
+{
+    if((x_size <= 0) || (y_size <= 0) || (network == nullptr)) return;
+
+    network->Initialize(x_size * y_size);
+
+    std::vector<std::pair<int, int>> directions;
+    directions.emplace_back(0, 1);
+    directions.emplace_back(0, -1);
+    directions.emplace_back(1, 0);
+    directions.emplace_back(-1, 0);
+
+    for(int x = 0; x < x_size; x++)
+    {
+        for(int y = 0; y < y_size; y++)
+        {
+            for(std::pair<int, int> direction : directions)
+            {
+                int target_x = x + direction.first;
+                int target_y = y + direction.second;
+                if((target_x < 0) || (target_x >= x_size) || (target_y < 0) || (target_y >= y_size)) continue;
+                network->Connect((x * x_size) + y, (target_x * x_size) + target_y);
+            }
+        }
+    }
+
 }
 
 template<typename VT, typename ET>
