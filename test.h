@@ -73,7 +73,7 @@ namespace Test
 
         for(int i = 0; i < node_number; i++)
         {
-            histogram[target_graph.vertex_list[i]->CalculateDegree()] += 1;
+            histogram[target_graph.vertex_list[i]->CountDegree()] += 1;
         }
 
         if(histogram.size())

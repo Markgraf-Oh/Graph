@@ -10,7 +10,7 @@ I made this repository for personal study, and want to share with fellow new-com
 You are free to copy, fork, use. But don't forget to add original link, and add 1 **star :)**
 
 
-# What's In Hear?
+# What's In Here?
 
 
 I feel shame as the code is quite messy. Let me explain in order
