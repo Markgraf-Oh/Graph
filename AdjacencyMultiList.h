@@ -90,7 +90,7 @@ namespace AdjacencyMultiList
 					그래프의 GetEdgeNumber를 사용하세요.
 		*@see		Graph<VT,ET>::GetEdgeNumber(), Vertex<VT,ET>::GetDegree()
 		*/
-		int CalculateDegree();
+		int CountDegree();
 
 		inline int GetDegree() const{ return degree; }
 
@@ -226,11 +226,10 @@ namespace AdjacencyMultiList
 
 		std::vector<Edge<VT, ET>*> FindConnections(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
 		
-		//
 		void Connect(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
 
 		void Connect(int i, int j);
-		//
+		
 		void Disconnect(Vertex<VT, ET>* vertex1, Vertex<VT, ET>* vertex2);
 
 		Edge<VT, ET>* PopEdge(Edge<VT, ET>* target_edge, Vertex<VT, ET>* return_reference_vertex);
@@ -242,7 +241,7 @@ namespace AdjacencyMultiList
 		typename std::vector<Vertex<VT, ET>*>::iterator PopVertex(typename std::vector<Vertex<VT, ET>*>::iterator taret_iterator);
 		
 		void ClearVertex();
-		//
+		
 		void ClearEdge();
 
 		void ResetVertexIndex();
@@ -272,17 +271,17 @@ namespace AdjacencyMultiList
 	}
 
 	template<typename VT, typename ET>
-	inline int Vertex<VT, ET>::CalculateDegree()
+	inline int Vertex<VT, ET>::CountDegree()
 	{
-		int cal_degree = 0;
+		int degree_count = 0;
 		Edge<VT, ET>* current = front;
 		while(current != nullptr)
 		{
-			++cal_degree;
+			++degree_count;
 			current = current->GetNext(this);
 		}
-		degree = cal_degree;
-		return cal_degree;
+		degree = degree_count;
+		return degree_count;
 	}
 
 	template<typename VT, typename ET>

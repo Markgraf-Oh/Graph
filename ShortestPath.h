@@ -95,26 +95,6 @@ namespace ShortestPath
 		* if we use custom heap, and rearrange heap after change non-top value, it took O(log V) time with O(V) space
 		* this will faster than std::set, but still have same time-complexity. so I choosed std::set.
 		*/
-
-		/**
-		* 최소 힙을 std::priority-queue로 구현하는 대신 레드-블랙 이진 트리인 std::set으로 구현했습니다.
-		* 
-		* 알고리즘 상 heap의 top에 위치하지 않은 vertex들의 거리 값을 변경해줘야 하는데,
-		* priority queue는 데이터 변경에 따른 재정렬을 지원하지 않으므로 계속 새로운 vertex-distance pair를 넣어주고
-		* lazy-deletion으로 오래된 pair가 top으로 올라왔을 때 제거해 줘야 합니다.
-		* 하지만 일반적으로 오래된 pair 일 수록 distance가 더 길기 때문에 top까지 올라올 확률은 적습니다.
-		* 따라서 vertex 수 V, edge 수 E에 대해 시간복잡도는 O(log V)이지만, O(E)의 공간을 차지하게 됩니다.
-		* 
-		* std::set의 이진 탐색트리를 사용할 경우 탐색은 O(log V)로 O(1)보다 느리지만,
-		* 삽입과 삭제를 통한 데이터의 수정은 O(logV)로 heap과 동일합니다.
-		* 그리고 무엇보다 O(V)의 공간을 유지할 수 있습니다.
-		* 
-		* 대부분의 경우 priority-queue를 사용하겠지만, 저는 이 라이브러리가 V => 100,000 / E => 400,000 인 네트워크 분석에 쓰이게 하고 싶었습니다.
-		* 이 경우 지나치게 긴 priority_queue의 경우 메모리 allocation에서 문제가 생길 수 있어 std::set을 사용했습니다.
-		* 
-		* priority-queue대신 자체적으로 heap을 만들경우, top이 아닌 데이터 수정 후 heap 재정렬에 O(log V)의 시간이 들 것으로 보입니다.
-		* 이 경우 O(V)의 공간만 차지하면서도 set보다는 빠르지만, 결국 시간복잡도는 동일한 O(logV)이기에 set으로 구현합니다.
-		*/
 	}
 
 	template<typename VT, typename ET>
