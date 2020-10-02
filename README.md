@@ -1,21 +1,13 @@
-# Graph
+[English README](README_english.md)
 
-This is a **C++** Library for Network Science Study etc.
-This Library consist of **Graph Data-Structure** implemented as **Adjacency-Multi-List**
-and various **related Algorithms**.
+# Graph
 
 네트워크 사이언스 등을 위한 **C++** 라이브러리입니다.
 이 라이브러리는 **인접다중리스트**로 구현된 **그래프 자료구조** 및 연관된 여러 **알고리즘**들로 구성되어 있습니다.
 
-I made this repository for personal study, and want to share with fellow new-comers of Computer-Science.
-
 개인적인 CS공부를 위해 만든 레포지토리로, 이제 막 프로그래밍에 발디딘 초보자 분들과 공유하고 싶습니다.
 
-You are free to copy, fork, use. But don't forget to add original link, and add 1 **star :)**
-
 마음껏 이용하셔도 좋습니다. 그치만 링크 남기는 거랑 **스타** 달주시는 건 빼먹지 마시고요 ㅎㅎ
-
-[English README](README_english.md)
 
 # What's In Hear?
 
